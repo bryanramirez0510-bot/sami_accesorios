@@ -146,7 +146,10 @@
                     <p class="text-xs text-stone-400 mt-1">Gestión de Inventarios, Clientes, Cobro de Envíos y Despacho Automatizado</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="logoutAdmin()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+                    <button onclick="loadAdminData()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-rotate"></i> Actualizar
+                </button>
+                <button onclick="logoutAdmin()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
                     </button>
                 </div>
@@ -180,9 +183,14 @@
             <div id="admin-tab-products" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-bold text-lg text-brand-dark">Catálogo e Inventario de Joyas</h3>
-                    <button onclick="openAddProductModal()" class="bg-brand-gold hover:bg-amber-600 text-brand-dark font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+    <div class="flex items-center gap-2 flex-wrap justify-end">
+                <button id="btn-migrate-products" onclick="migrateLocalProducts()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm" title="Sube a la base de datos los productos que editaste antes en este navegador">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Importar productos de este navegador
+                </button>
+                <button onclick="openAddProductModal()" class="bg-brand-gold hover:bg-amber-600 text-brand-dark font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-plus"></i> Agregar Nuevo Producto
                     </button>
+                </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -459,7 +467,7 @@
 
                 <!-- Botón Único Físico de Checkout -->
                 <div class="p-4 border-t border-brand-taupe bg-white shadow-lg">
-                    <button onclick="submitOrderCheckout()" class="w-full bg-brand-dark hover:bg-brand-gold text-brand-gold hover:text-brand-dark font-bold text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border border-brand-gold">
+                    <button id="checkout-btn" onclick="submitOrderCheckout()" class="w-full bg-brand-dark hover:bg-brand-gold text-brand-gold hover:text-brand-dark font-bold text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border border-brand-gold">
                         <i class="fa-brands fa-whatsapp text-lg"></i>
                         <span>Confirmar y Enviar Pedido</span>
                     </button>
@@ -594,37 +602,142 @@
             { id: 4, sku: "COL-01", name: "Collar Cadena Tejido Veneciano", category: "Collares", price: 42000, stock: 6, image: "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=500&auto=format&fit=crop&q=80", description: "Cadena delgada con brillo espejado resistente al uso diario." }
         ];
 
+        // =====================================================================
+        // CONEXIÓN CON LA BASE DE DATOS (Google Sheets + Apps Script)
+        // Pega aquí la URL que te da Apps Script al implementar la "Aplicación web"
+        // (termina en /exec). Mientras no la pegues, la tienda no puede guardar pedidos.
+        // =====================================================================
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwTibdA2ZdjhtHXEBgQGcK06uAmMmVmwr0LntHL7OH2sDnasxDE_T5dQ3Gd4SjJhBGMyw/exec';
+        const USE_API = /^https:\/\/script\.google\.com\//.test(API_URL);
+
+        async function api(action, data = {}) {
+            try {
+                // Sin cabeceras personalizadas: así el navegador no bloquea la petición (CORS)
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
+                return await res.json();
+            } catch (err) {
+                console.error('Error de conexión con la API:', err);
+                return { ok: false, network: true, error: 'No hay conexión con el servidor.' };
+            }
+        }
+
+        // Escapa texto escrito por clientes antes de mostrarlo en el panel (evita inyección de código)
+        function esc(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+
         // --- ESTADO GLOBAL --- //
-        let products = JSON.parse(localStorage.getItem('sami_products')) || INITIAL_PRODUCTS;
+        // Datos COMPARTIDOS (vienen de la base de datos): productos, pedidos, clientes, guías, envío.
+        // Datos PERSONALES de cada visitante (se quedan en su navegador): carrito y favoritos.
+        let products = JSON.parse(localStorage.getItem('sami_products_cache') || 'null') || [];
+        let productsLoaded = products.length > 0;
         let cart = JSON.parse(localStorage.getItem('sami_cart')) || [];
         let wishlist = JSON.parse(localStorage.getItem('sami_wishlist')) || [];
-        let orders = JSON.parse(localStorage.getItem('sami_orders')) || [
-            { id: "SAM-801", customerName: "Clara Mendoza", phone: "3124567890", city: "Medellín", address: "Carrera 43A # 12-45", email: "clara@gmail.com", date: "2026-03-01", items: 2, total: 66800, status: "Pendiente", paymentStatus: "Pago Confirmado" }
-        ];
-        let customers = JSON.parse(localStorage.getItem('sami_customers')) || [
-            { id: 1, name: "Clara Mendoza", phone: "3124567890", email: "clara@gmail.com", city: "Medellín", address: "Carrera 43A # 12-45" }
-        ];
-        let shipmentGuides = JSON.parse(localStorage.getItem('sami_guides')) || [];
-        let isAdminLoggedIn = localStorage.getItem('sami_admin_logged') === 'true';
+        let orders = [];
+        let customers = [];
+        let shipmentGuides = [];
+        let adminCreds = JSON.parse(sessionStorage.getItem('sami_admin_creds') || 'null');
+        let isAdminLoggedIn = !!adminCreds;
         let shippingCostAmount = parseInt(localStorage.getItem('sami_shipping_cost_amount')) || 12000;
         let isShippingCharged = localStorage.getItem('sami_charge_shipping') === 'true';
         let activeCategory = 'all';
 
         // --- PERSISTENCIA --- //
+        // Solo guarda lo personal del visitante. Lo demás vive en Google Sheets.
         function saveData() {
-            localStorage.setItem('sami_products', JSON.stringify(products));
             localStorage.setItem('sami_cart', JSON.stringify(cart));
             localStorage.setItem('sami_wishlist', JSON.stringify(wishlist));
-            localStorage.setItem('sami_orders', JSON.stringify(orders));
-            localStorage.setItem('sami_customers', JSON.stringify(customers));
-            localStorage.setItem('sami_guides', JSON.stringify(shipmentGuides));
+        }
+
+        function showCatalogMessage(msg) {
+            const grid = document.getElementById('products-grid');
+            if (grid) grid.innerHTML = `<p class="col-span-full text-center text-xs text-brand-muted py-12">${msg}</p>`;
+        }
+
+        function applyConfig(cfg) {
+            if (!cfg) return;
+            shippingCostAmount = cfg.shippingCost;
+            isShippingCharged = cfg.chargeShipping;
             localStorage.setItem('sami_charge_shipping', isShippingCharged);
             localStorage.setItem('sami_shipping_cost_amount', shippingCostAmount);
-            
-            // Actualización en tiempo real de las tablas del panel de administración
-            if (isAdminLoggedIn) {
-                renderAdminTables();
+        }
+
+        // Catálogo y tarifa de envío (lo ve cualquier visitante)
+        async function loadPublicData() {
+            const r = await api('getPublic');
+            if (!r.ok) {
+                if (!productsLoaded) showCatalogMessage('No pudimos cargar el catálogo. Recarga la página o escríbenos por WhatsApp.');
+                return;
             }
+            products = r.products;
+            productsLoaded = true;
+            localStorage.setItem('sami_products_cache', JSON.stringify(products));
+            applyConfig(r.config);
+            cart = cart.filter(i => products.some(p => p.id === i.id));
+            saveData();
+            renderProducts();
+            updateCartUI();
+            updateShippingUI();
+        }
+
+        // Datos del panel de administración (requieren usuario y contraseña)
+        async function adminApi(action, data = {}) {
+            if (!adminCreds) return { ok: false, error: 'Sesión no iniciada.' };
+            const r = await api(action, { ...data, user: adminCreds.user, pass: adminCreds.pass });
+            if (!r.ok && !r.network && /incorrectos|configura usuario/i.test(r.error || '')) logoutAdmin();
+            return r;
+        }
+
+        async function loadAdminData(silent) {
+            if (!isAdminLoggedIn) return false;
+            const r = await adminApi('getAdmin');
+            if (!r.ok) {
+                if (!silent) showToast(r.error || 'No se pudo cargar el panel.');
+                return false;
+            }
+            const before = JSON.stringify([products, orders, customers, shipmentGuides, isShippingCharged, shippingCostAmount]);
+            products = r.products;
+            productsLoaded = true;
+            orders = r.orders;
+            customers = r.customers;
+            shipmentGuides = r.guides;
+            applyConfig(r.config);
+            const after = JSON.stringify([products, orders, customers, shipmentGuides, isShippingCharged, shippingCostAmount]);
+            const migrateBtn = document.getElementById('btn-migrate-products');
+            if (migrateBtn) migrateBtn.classList.toggle('hidden', !localStorage.getItem('sami_products'));
+            if (before !== after || !silent) {
+                renderProducts();
+                renderAdminTables();
+                updateShippingUI();
+                updateCartUI();
+            }
+            return true;
+        }
+
+        function logoutAdmin() {
+            adminCreds = null;
+            isAdminLoggedIn = false;
+            sessionStorage.removeItem('sami_admin_creds');
+            orders = [];
+            customers = [];
+            shipmentGuides = [];
+            switchTab('store');
+            loadPublicData();
+        }
+
+        // Importa los productos que editaste antes en ESTE navegador (versión sin base de datos)
+        async function migrateLocalProducts() {
+            let local = [];
+            try { local = JSON.parse(localStorage.getItem('sami_products') || '[]'); } catch (e) { local = []; }
+            if (!Array.isArray(local) || local.length === 0) {
+                localStorage.removeItem('sami_products');
+                return loadAdminData();
+            }
+            const r = await adminApi('importProducts', { products: local });
+            if (!r.ok) { showToast(r.error || 'No se pudo importar.'); return; }
+            localStorage.removeItem('sami_products');
+            showToast(`${r.imported} productos importados a la base de datos.`);
+            await loadAdminData();
         }
 
         // --- UTILS & TOAST --- //
@@ -637,6 +750,10 @@
 
         // --- MODAL DE LOGIN ADMIN --- //
         function openLoginModal() {
+            if (isAdminLoggedIn) {
+                loadAdminData().then(ok => { if (ok) switchTab('admin'); });
+                return;
+            }
             document.getElementById('login-modal').classList.remove('hidden');
         }
 
@@ -644,20 +761,30 @@
             document.getElementById('login-modal').classList.add('hidden');
         }
 
-        function handleLoginSubmit(e) {
+        async function handleLoginSubmit(e) {
             e.preventDefault();
             const u = document.getElementById('login-username').value.trim();
             const p = document.getElementById('login-password').value.trim();
 
-            if (u === 'bryan' && p === '920510') {
-                isAdminLoggedIn = true;
-                localStorage.setItem('sami_admin_logged', 'true');
-                closeLoginModal();
-                switchTab('admin');
-                showToast("Bienvenido al Panel SAMFE Admin");
-            } else {
-                showToast("Usuario o contraseña incorrectos");
+            if (!USE_API) {
+                showToast("Falta conectar la base de datos (API_URL en index.html)");
+                return;
             }
+
+            const r = await api('login', { user: u, pass: p });
+            if (!r.ok) {
+                showToast(r.network ? "No hay conexión con el servidor" : (r.error || "Usuario o contraseña incorrectos"));
+                return;
+            }
+
+            adminCreds = { user: u, pass: p };
+            sessionStorage.setItem('sami_admin_creds', JSON.stringify(adminCreds));
+            isAdminLoggedIn = true;
+            document.getElementById('login-password').value = '';
+            closeLoginModal();
+            await loadAdminData();
+            switchTab('admin');
+            showToast("Bienvenido al Panel SAMFE Admin");
         }
 
         // --- NAVEGACIÓN Y VISTAS --- //
@@ -723,6 +850,11 @@
         function renderProducts() {
             const grid = document.getElementById('products-grid');
             if (!grid) return;
+
+            if (!productsLoaded) {
+                grid.innerHTML = '<p class="col-span-full text-center text-xs text-brand-muted py-12">Cargando catálogo…</p>';
+                return;
+            }
 
             const categoryFilter = typeof activeCategory !== 'undefined' ? activeCategory : 'all';
             const filtered = categoryFilter === 'all' ? products : products.filter(p => p.category === categoryFilter);
@@ -852,7 +984,10 @@
             totalEl.textContent = `$${grandTotal.toLocaleString('es-CO')}`;
         }
 
-        function submitOrderCheckout() {
+        let isSubmittingOrder = false;
+
+        async function submitOrderCheckout() {
+            if (isSubmittingOrder) return;
             if (cart.length === 0) {
                 showToast("Agrega productos al carrito primero");
                 return;
@@ -869,136 +1004,129 @@
                 return;
             }
 
-            // Guardar o actualizar cliente en tiempo real
-            const existingCust = customers.find(c => c.email === email || c.phone === phone);
-            if (!existingCust) {
-                customers.push({ id: Date.now(), name, phone, email, city, address });
-            }
+            // Datos para el mensaje de WhatsApp (antes de vaciar el carrito)
+            const productLines = cart.map(i => {
+                const p = products.find(x => x.id === i.id);
+                return p ? `• ${i.quantity} x ${p.name}` : null;
+            }).filter(Boolean).join('\n');
+            const localSubtotal = cart.reduce((sum, i) => {
+                const p = products.find(x => x.id === i.id);
+                return sum + (p ? p.price * i.quantity : 0);
+            }, 0);
+            const localTotal = localSubtotal + (isShippingCharged ? shippingCostAmount : 0);
 
-            // Capturar ítems exactos para Picking / Bodega
-            const orderItems = cart.map(item => {
-                const p = products.find(prod => prod.id === item.id);
-                return {
-                    id: item.id,
-                    sku: p ? p.sku : 'REF-GEN',
-                    name: p ? p.name : 'Joya Sami',
-                    quantity: item.quantity,
-                    price: p ? p.price : 0
-                };
+            // Abrimos la pestaña de WhatsApp dentro del clic para que el navegador no la bloquee
+            const waWin = window.open('about:blank', '_blank');
+
+            isSubmittingOrder = true;
+            const btn = document.getElementById('checkout-btn');
+            const btnLabel = btn ? btn.querySelector('span') : null;
+            const oldLabel = btnLabel ? btnLabel.textContent : '';
+            if (btn) { btn.disabled = true; btn.classList.add('opacity-60'); }
+            if (btnLabel) btnLabel.textContent = 'Registrando tu pedido...';
+
+            const r = await api('addOrder', {
+                customer: { name, phone, city, address, email },
+                items: cart.map(i => ({ id: i.id, quantity: i.quantity }))
             });
 
-            // Calcular Totales
-            const subtotal = cart.reduce((sum, item) => {
-                const p = products.find(prod => prod.id === item.id);
-                return sum + (p ? p.price * item.quantity : 0);
-            }, 0);
-            const total = subtotal + (isShippingCharged ? shippingCostAmount : 0);
-            const orderId = `SAM-${Math.floor(100 + Math.random() * 900)}`;
+            isSubmittingOrder = false;
+            if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); }
+            if (btnLabel) btnLabel.textContent = oldLabel;
 
-            // Guardar Pedido con detalles de alistamiento (Picking)
-            const newOrder = {
-                id: orderId,
-                customerName: name,
-                phone,
-                city,
-                address,
-                email,
-                date: new Date().toISOString().split('T')[0],
-                items: cart.reduce((s, i) => s + i.quantity, 0),
-                orderDetails: orderItems,
-                total,
-                status: "Pendiente",
-                paymentStatus: "Pendiente por Confirmar"
-            };
+            // El servidor rechazó el pedido (dato inválido, producto ya no existe...)
+            if (!r.ok && !r.network) {
+                if (waWin) waWin.close();
+                showToast(r.error || "No se pudo registrar el pedido");
+                return;
+            }
 
-            orders.unshift(newOrder);
+            const saved = r.ok;
+            const orderId = saved ? r.orderId : 'SIN REGISTRO';
+            const total = saved ? r.total : localTotal;
 
-            // Limpiar Carrito
+            const text = `*NUEVO PEDIDO DE COMPRA - SAMI ACCESORIOS*\n\n` +
+                `*ID Pedido:* ${orderId}\n` +
+                `*Cliente:* ${name}\n` +
+                `*Teléfono:* ${phone}\n` +
+                `*Ciudad:* ${city}\n` +
+                `*Dirección:* ${address}\n` +
+                `*Correo:* ${email}\n\n` +
+                `*Productos:*\n${productLines}\n\n` +
+                `*Total a Pagar:* $${total.toLocaleString('es-CO')}\n\n` +
+                `He realizado la compra y deseo coordinar el envío/pago.`;
+            const waUrl = `https://wa.me/573115092400?text=${encodeURIComponent(text)}`;
+
             cart = [];
             saveData();
             updateCartUI();
             toggleCartDrawer();
 
-            // Abrir WhatsApp
-            const message = `*NUEVO PEDIDO DE COMPRA - SAMI ACCESORIOS*%0A%0A` +
-                `*ID Pedido:* ${orderId}%0A` +
-                `*Cliente:* ${name}%0A` +
-                `*Teléfono:* ${phone}%0A` +
-                `*Ciudad:* ${city}%0A` +
-                `*Dirección:* ${address}%0A` +
-                `*Correo:* ${email}%0A` +
-                `*Total a Pagar:* $${total.toLocaleString('es-CO')}%0A%0A` +
-                `He realizado la compra y deseo coordinar el envío/pago.`;
-            
-            window.open(`https://wa.me/573115092400?text=${message}`, '_blank');
-            showToast("Pedido registrado. Redirigiendo a WhatsApp...");
+            if (waWin) { waWin.location.href = waUrl; } else { window.location.href = waUrl; }
+            showToast(saved
+                ? `Pedido ${orderId} registrado. Abriendo WhatsApp...`
+                : "No pudimos guardar el pedido en el sistema, pero te llevamos a WhatsApp para completarlo.");
         }
 
         // --- CAMBIO DE ESTADO DE PAGO EN TIEMPO REAL --- //
-        function togglePaymentStatus(orderId) {
+        async function togglePaymentStatus(orderId) {
             const order = orders.find(o => o.id === orderId);
             if (!order) return;
 
+            let next, msg;
             if (order.paymentStatus === "Pendiente por Confirmar") {
-                order.paymentStatus = "Pago Confirmado";
-                showToast(`Pago confirmado para pedido ${order.id}. Generando orden de alistamiento...`);
+                next = "Pago Confirmado";
+                msg = `Pago confirmado para pedido ${order.id}.`;
             } else if (order.paymentStatus === "Pago Confirmado") {
-                order.paymentStatus = "Alistamiento Listo";
-                showToast(`Orden de alistamiento lista para empaque.`);
+                next = "Alistamiento Listo";
+                msg = `Orden de alistamiento lista para empaque.`;
             } else {
-                order.paymentStatus = "Pendiente por Confirmar";
+                next = "Pendiente por Confirmar";
+                msg = `Pedido ${order.id} vuelve a pendiente de pago.`;
             }
 
-            saveData();
+            const r = await adminApi('updateOrder', { id: orderId, patch: { paymentStatus: next } });
+            if (!r.ok) { showToast(r.error || 'No se pudo guardar el cambio'); return; }
+            order.paymentStatus = next;
+            renderAdminTables();
+            showToast(msg);
         }
 
-        function confirmOrderShipping(orderId) {
+        async function confirmOrderShipping(orderId) {
             const order = orders.find(o => o.id === orderId);
             if (!order) return;
 
             const carrierSelect = document.getElementById(`carrier-select-${orderId}`);
             const carrier = carrierSelect ? carrierSelect.value : 'Interrapidísimo';
-            const guideNumber = `GUA-${Math.floor(100000 + Math.random() * 900000)}`;
 
-            order.status = "Enviado";
-            order.paymentStatus = "Alistamiento Listo";
+            const r = await adminApi('shipOrder', { orderId, carrier });
+            if (!r.ok) { showToast(r.error || 'No se pudo confirmar el envío'); return; }
 
-            // Generar Guía en Tiempo Real
-            const existingGuide = shipmentGuides.find(g => g.orderId === orderId);
-            if (!existingGuide) {
-                shipmentGuides.unshift({
-                    guideNumber,
-                    orderId: order.id,
-                    recipient: order.customerName,
-                    city: order.city,
-                    address: order.address,
-                    phone: order.phone,
-                    carrier,
-                    date: new Date().toISOString().split('T')[0],
-                    status: "En Tránsito"
-                });
-            }
-
-            saveData();
-            showToast(`Pedido ${order.id} despachado. Guía ${guideNumber} generada.`);
+            order.status = r.order.status;
+            order.paymentStatus = r.order.paymentStatus;
+            if (!shipmentGuides.some(g => g.guideNumber === r.guide.guideNumber)) shipmentGuides.unshift(r.guide);
+            renderAdminTables();
+            showToast(`Pedido ${order.id} despachado. Guía ${r.guide.guideNumber} generada.`);
         }
 
-        function updateManualShippingCost() {
+        async function updateManualShippingCost() {
             const inputVal = parseInt(document.getElementById('manual-shipping-input').value);
             if (isNaN(inputVal) || inputVal < 0) {
                 showToast("Por favor ingrese un valor de envío válido.");
                 return;
             }
-            shippingCostAmount = inputVal;
-            saveData();
+            const r = await adminApi('saveConfig', { chargeShipping: isShippingCharged, shippingCost: inputVal });
+            if (!r.ok) { showToast(r.error || 'No se pudo guardar'); return; }
+            applyConfig(r.config);
             updateShippingUI();
             updateCartUI();
             showToast(`Costo de envío modificado a $${shippingCostAmount.toLocaleString('es-CO')}`);
         }
 
-        function toggleShippingCharge() {
-            isShippingCharged = !isShippingCharged;
-            saveData();
+        async function toggleShippingCharge() {
+            const r = await adminApi('saveConfig', { chargeShipping: !isShippingCharged, shippingCost: shippingCostAmount });
+            if (!r.ok) { showToast(r.error || 'No se pudo guardar'); return; }
+            applyConfig(r.config);
             updateShippingUI();
             updateCartUI();
             showToast(isShippingCharged ? `Cobro de Envío Activado ($${shippingCostAmount.toLocaleString('es-CO')})` : "Envío Gratis Activado");
@@ -1041,10 +1169,10 @@
             if (pTable) {
                 pTable.innerHTML = products.map(p => `
                     <tr class="hover:bg-stone-50 text-xs">
-                        <td class="px-4 py-3 font-mono">${p.sku}</td>
+                        <td class="px-4 py-3 font-mono">${esc(p.sku)}</td>
                         <td class="px-4 py-3 flex items-center gap-2">
-                            <img src="${p.image}" class="w-8 h-8 rounded object-cover border">
-                            <span class="font-bold">${p.name}</span>
+                            <img src="${esc(p.image)}" class="w-8 h-8 rounded object-cover border">
+                            <span class="font-bold">${esc(p.name)}</span>
                         </td>
                         <td class="px-4 py-3">${p.category}</td>
                         <td class="px-4 py-3 font-bold">$${p.price.toLocaleString('es-CO')}</td>
@@ -1070,8 +1198,8 @@
                     <tr class="hover:bg-stone-50 text-xs">
                         <td class="px-4 py-3 font-mono font-bold text-brand-gold">${o.id}</td>
                         <td class="px-4 py-3">
-                            <div class="font-bold">${o.customerName || o.customer}</div>
-                            <div class="text-[10px] text-gray-400">${o.phone || ''} | ${o.city || ''}</div>
+                            <div class="font-bold">${esc(o.customerName || o.customer)}</div>
+                            <div class="text-[10px] text-gray-400">${esc(o.phone)} | ${esc(o.city)}</div>
                         </td>
                         <td class="px-4 py-3">${o.date}</td>
                         <td class="px-4 py-3">${o.items} u.</td>
@@ -1103,11 +1231,11 @@
             if (cTable) {
                 cTable.innerHTML = customers.map(c => `
                     <tr class="hover:bg-stone-50 text-xs">
-                        <td class="px-4 py-3 font-bold">${c.name}</td>
-                        <td class="px-4 py-3 font-mono">${c.phone}</td>
-                        <td class="px-4 py-3">${c.email}</td>
-                        <td class="px-4 py-3">${c.city}</td>
-                        <td class="px-4 py-3">${c.address}</td>
+                        <td class="px-4 py-3 font-bold">${esc(c.name)}</td>
+                        <td class="px-4 py-3 font-mono">${esc(c.phone)}</td>
+                        <td class="px-4 py-3">${esc(c.email)}</td>
+                        <td class="px-4 py-3">${esc(c.city)}</td>
+                        <td class="px-4 py-3">${esc(c.address)}</td>
                     </tr>
                 `).join('');
             }
@@ -1119,7 +1247,7 @@
                     <tr class="hover:bg-stone-50 text-xs">
                         <td class="px-4 py-3 font-mono font-bold text-brand-gold">${g.guideNumber}</td>
                         <td class="px-4 py-3 font-mono">${g.orderId}</td>
-                        <td class="px-4 py-3">${g.recipient} (${g.city})</td>
+                        <td class="px-4 py-3">${esc(g.recipient)} (${esc(g.city)})</td>
                         <td class="px-4 py-3"><span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[10px] font-bold">${g.status}</span></td>
                         <td class="px-4 py-3 text-right">
                             <button onclick="printShippingGuidePDF('${g.guideNumber}')" class="bg-brand-dark text-white font-bold text-[10px] px-2.5 py-1 rounded">PDF</button>
@@ -1134,8 +1262,8 @@
                 pkTable.innerHTML = orders.map(o => `
                     <tr class="hover:bg-stone-50 text-xs">
                         <td class="px-4 py-3 font-mono font-bold text-brand-gold">${o.id}</td>
-                        <td class="px-4 py-3 font-bold">${o.customerName || o.customer}</td>
-                        <td class="px-4 py-3">${o.city || 'N/A'}</td>
+                        <td class="px-4 py-3 font-bold">${esc(o.customerName || o.customer)}</td>
+                        <td class="px-4 py-3">${esc(o.city || 'N/A')}</td>
                         <td class="px-4 py-3 font-bold">${o.items} refs</td>
                         <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.status === 'Completado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span></td>
                         <td class="px-4 py-3 text-right">
@@ -1188,36 +1316,37 @@
             document.getElementById('product-modal').classList.add('hidden');
         }
 
-        function saveProductForm(e) {
+        async function saveProductForm(e) {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
-            const sku = document.getElementById('prod-sku').value;
-            const name = document.getElementById('prod-name').value;
-            const category = document.getElementById('prod-category').value;
-            const price = parseFloat(document.getElementById('prod-price').value);
-            const stock = parseInt(document.getElementById('prod-stock').value);
-            const image = document.getElementById('prod-image').value;
-            const description = document.getElementById('prod-desc').value;
+            const product = {
+                id: id ? parseInt(id) : 0,
+                sku: document.getElementById('prod-sku').value,
+                name: document.getElementById('prod-name').value,
+                category: document.getElementById('prod-category').value,
+                price: parseFloat(document.getElementById('prod-price').value),
+                stock: parseInt(document.getElementById('prod-stock').value),
+                image: document.getElementById('prod-image').value,
+                description: document.getElementById('prod-desc').value
+            };
 
-            if (id) {
-                const index = products.findIndex(p => p.id === parseInt(id));
-                if (index !== -1) {
-                    products[index] = { ...products[index], sku, name, category, price, stock, image, description };
-                }
-            } else {
-                products.push({ id: Date.now(), sku, name, category, price, stock, image, description });
-            }
+            const r = await adminApi('upsertProduct', { product });
+            if (!r.ok) { showToast(r.error || 'No se pudo guardar el producto'); return; }
 
-            saveData();
+            const index = products.findIndex(p => p.id === r.product.id);
+            if (index !== -1) { products[index] = r.product; } else { products.push(r.product); }
+
             renderProducts();
             renderAdminTables();
             closeProductModal();
             showToast("Producto guardado correctamente");
         }
 
-        function deleteProduct(id) {
+        async function deleteProduct(id) {
+            if (!confirm('¿Eliminar este producto de la tienda?')) return;
+            const r = await adminApi('deleteProduct', { id });
+            if (!r.ok) { showToast(r.error || 'No se pudo eliminar'); return; }
             products = products.filter(p => p.id !== id);
-            saveData();
             renderProducts();
             renderAdminTables();
             showToast("Producto eliminado");
@@ -1242,10 +1371,10 @@
                 <body>
                     <div class="box">
                         <h2>SAMI ACCESORIOS - GUÍA DE DESPACHO</h2>
-                        <p><strong>Nro. Guía:</strong> ${guide.guideNumber} | <strong>Carrier:</strong> ${guide.carrier}</p>
+                        <p><strong>Nro. Guía:</strong> ${guide.guideNumber} | <strong>Carrier:</strong> ${esc(guide.carrier)}</p>
                         <p><strong>ID Pedido:</strong> ${guide.orderId} | <strong>Fecha:</strong> ${guide.date}</p>
                         <hr>
-                        <p><strong>DESTINATARIO:</strong><br>${guide.recipient}<br>Ciudad: ${guide.city}<br>Dirección: ${guide.address}<br>Teléfono: ${guide.phone}</p>
+                        <p><strong>DESTINATARIO:</strong><br>${esc(guide.recipient)}<br>Ciudad: ${esc(guide.city)}<br>Dirección: ${esc(guide.address)}<br>Teléfono: ${esc(guide.phone)}</p>
                         <div class="qr">
                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=SAMI-${guide.guideNumber}">
                         </div>
@@ -1267,7 +1396,7 @@
             let itemList = '';
             if (order.orderDetails && order.orderDetails.length > 0) {
                 itemList = order.orderDetails.map(i => `
-                    <li><span class="check-box"></span> <strong>[${i.sku}]</strong> ${i.name} &mdash; <span style="color:#D4AF37;">x${i.quantity} u.</span></li>
+                    <li><span class="check-box"></span> <strong>[${esc(i.sku)}]</strong> ${esc(i.name)} &mdash; <span style="color:#D4AF37;">x${i.quantity} u.</span></li>
                 `).join('');
             } else {
                 itemList = `<li><span class="check-box"></span> <strong>[REF-GEN]</strong> Piezas seleccionadas en joyería x${order.items} unidades</li>`;
@@ -1315,19 +1444,19 @@
                             </tr>
                             <tr>
                                 <td class="label">Cliente Destinatario:</td>
-                                <td style="font-weight: bold;">${order.customerName || order.customer || 'Cliente Particular'}</td>
+                                <td style="font-weight: bold;">${esc(order.customerName || order.customer || 'Cliente Particular')}</td>
                             </tr>
                             <tr>
                                 <td class="label">Teléfono de Contacto:</td>
-                                <td>${order.phone || '311 509 2400'}</td>
+                                <td>${esc(order.phone || '311 509 2400')}</td>
                             </tr>
                             <tr>
                                 <td class="label">Ciudad Destino:</td>
-                                <td style="font-weight: bold;">${order.city || 'Colombia'}</td>
+                                <td style="font-weight: bold;">${esc(order.city || 'Colombia')}</td>
                             </tr>
                             <tr>
                                 <td class="label">Dirección de Entrega:</td>
-                                <td>${order.address || 'Entrega a convenir'}</td>
+                                <td>${esc(order.address || 'Entrega a convenir')}</td>
                             </tr>
                             <tr>
                                 <td class="label">Fecha de Pedido:</td>
@@ -1366,6 +1495,15 @@
                 wCount.textContent = wishlist.length;
                 wCount.classList.toggle('hidden', wishlist.length === 0);
             }
+            loadPublicData();
+
+            // Si el panel está abierto, se actualiza solo cada 30 segundos (pedidos nuevos)
+            setInterval(() => {
+                const adminView = document.getElementById('admin-view');
+                if (isAdminLoggedIn && !document.hidden && adminView && !adminView.classList.contains('hidden')) {
+                    loadAdminData(true);
+                }
+            }, 30000);
         };
     </script>
 </body>
