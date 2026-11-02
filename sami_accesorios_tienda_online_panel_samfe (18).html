@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sami Accesorios - Joyería Fina & Panel SAMFE</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Playfair Display & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-gold': '#D4AF37',
+                        'brand-dark': '#1A1A1A',
+                        'brand-cream': '#FAF8F5',
+                        'brand-taupe': '#E8E2D9',
+                        'brand-text': '#2C2C2C',
+                        'brand-muted': '#767676',
+                        'brand-bg': '#FDFBF7'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .font-serif-title { font-family: 'Playfair Display', serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #FAF8F5; }
+        ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans antialiased selection:bg-brand-gold selection:text-white flex flex-col min-h-screen">
+
+    <!-- MENSAJE DE NOTIFICACIÓN / TOAST -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300 ease-in-out bg-brand-dark text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 border-l-4 border-brand-gold max-w-md">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-brand-gold text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium">Notificación</span>
+    </div>
+
+    <!-- ENCABEZADO Y NAVEGACIÓN DE LA TIENDA -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-brand-taupe shadow-xs">
+        <!-- Top Bar Promo -->
+        <div id="top-bar-promo" class="bg-brand-dark text-white text-[11px] py-1.5 px-4 text-center tracking-wide flex justify-center items-center gap-2">
+            <span>✨ Envíos a toda Colombia | Paga al recibir o con Transferencia</span>
+            <span id="badge-shipping-status" class="bg-brand-gold/20 text-brand-gold px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Envío Gratis</span>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center cursor-pointer" onclick="switchTab('store')">
+                    <div class="w-10 h-10 rounded-full bg-brand-dark text-brand-gold flex items-center justify-center font-serif text-xl font-bold shadow-md mr-3">S</div>
+                    <div>
+                        <h1 class="font-serif-title text-2xl font-bold tracking-tight text-brand-dark leading-none">SAMI</h1>
+                        <span class="text-[10px] tracking-[0.25em] text-brand-gold uppercase font-semibold block mt-0.5">Accesorio & Joyería</span>
+                    </div>
+                </div>
+
+                <!-- Categorías (Navegación Desktop) -->
+                <nav class="hidden md:flex space-x-8 text-sm font-medium">
+                    <button onclick="filterCategory('all')" class="nav-cat-btn text-brand-dark font-semibold hover:text-brand-gold transition-colors">Todas las Piezas</button>
+                    <button onclick="filterCategory('Pulseras')" class="nav-cat-btn text-brand-muted hover:text-brand-gold transition-colors">Pulseras</button>
+                    <button onclick="filterCategory('Anillos')" class="nav-cat-btn text-brand-muted hover:text-brand-gold transition-colors">Anillos</button>
+                    <button onclick="filterCategory('Collares')" class="nav-cat-btn text-brand-muted hover:text-brand-gold transition-colors">Collares</button>
+                    <button onclick="filterCategory('Aretes')" class="nav-cat-btn text-brand-muted hover:text-brand-gold transition-colors">Aretes</button>
+                </nav>
+
+                <!-- Iconos Carrito & Favoritos -->
+                <div class="flex items-center space-x-5">
+                    <button onclick="openWishlistModal()" class="relative text-brand-dark hover:text-brand-gold transition-colors p-2">
+                        <i class="fa-regular fa-heart text-xl"></i>
+                        <span id="wishlist-count" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                    </button>
+
+                    <button onclick="toggleCartDrawer()" class="relative bg-brand-dark text-white px-4 py-2 rounded-full flex items-center gap-2.5 hover:bg-brand-gold hover:text-brand-dark transition-all duration-200 shadow-sm">
+                        <i class="fa-solid fa-bag-shopping text-sm text-brand-gold"></i>
+                        <span class="text-xs font-bold tracking-wider uppercase">Carrito</span>
+                        <span id="cart-count" class="bg-brand-gold text-brand-dark text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- VISTA PRINCIPAL DE LA TIENDA -->
+    <main id="store-view" class="flex-grow">
+        <!-- Hero Banner -->
+        <section class="bg-gradient-to-r from-brand-dark via-stone-900 to-brand-dark text-white py-14 px-4 text-center relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            <div class="max-w-3xl mx-auto relative z-10 space-y-4">
+                <span class="text-brand-gold text-xs font-semibold uppercase tracking-[0.3em]">Colección Exclusiva 2026</span>
+                <h2 class="font-serif-title text-3xl sm:text-4xl md:text-5xl font-normal leading-tight">Elegancia que Resalta tu Estilo Único</h2>
+                <p class="text-stone-300 text-xs sm:text-sm font-light max-w-xl mx-auto">Joyas hechas con dedicación, laminadas en oro de 18k y piedras naturales para acompañarte en cada momento.</p>
+            </div>
+        </section>
+
+        <!-- Filtros Rápidos (Móvil) -->
+        <section class="max-w-7xl mx-auto px-4 pt-6 pb-2 md:hidden">
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <button onclick="filterCategory('all')" class="bg-brand-dark text-white text-xs font-medium px-4 py-1.5 rounded-full whitespace-nowrap">Todas</button>
+                <button onclick="filterCategory('Pulseras')" class="bg-white border border-brand-taupe text-xs font-medium px-4 py-1.5 rounded-full whitespace-nowrap">Pulseras</button>
+                <button onclick="filterCategory('Anillos')" class="bg-white border border-brand-taupe text-xs font-medium px-4 py-1.5 rounded-full whitespace-nowrap">Anillos</button>
+                <button onclick="filterCategory('Collares')" class="bg-white border border-brand-taupe text-xs font-medium px-4 py-1.5 rounded-full whitespace-nowrap">Collares</button>
+                <button onclick="filterCategory('Aretes')" class="bg-white border border-brand-taupe text-xs font-medium px-4 py-1.5 rounded-full whitespace-nowrap">Aretes</button>
+            </div>
+        </section>
+
+        <!-- Grilla de Productos -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex items-center justify-between mb-6 border-b border-brand-taupe pb-4">
+                <div>
+                    <h3 id="category-title" class="font-serif-title text-2xl font-bold text-brand-dark">Catálogo de Joyería</h3>
+                    <p class="text-xs text-brand-muted">Explora nuestras piezas artesanales en oro laminado</p>
+                </div>
+                <span id="product-count-label" class="text-xs font-semibold text-brand-gold bg-brand-cream border border-brand-taupe px-3 py-1 rounded-full">0 Productos</span>
+            </div>
+
+            <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </section>
+    </main>
+
+    <!-- VISTA DEL PANEL ADMINISTRADOR (SAMFE ADMIN) -->
+    <main id="admin-view" class="flex-grow hidden bg-stone-100 py-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Banner Cabecera Admin -->
+            <div class="bg-brand-dark text-white p-6 rounded-2xl shadow-lg mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <span class="bg-brand-gold text-brand-dark text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">SAMFE</span>
+                        <h2 class="font-serif-title text-2xl font-bold">Panel de Administración & Despachos</h2>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-1">Gestión de Inventarios, Clientes, Cobro de Envíos y Despacho Automatizado</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="logoutAdmin()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navegación de Pestañas SAMFE -->
+            <div class="bg-white rounded-xl shadow-xs border border-brand-taupe mb-6 p-2 flex overflow-x-auto gap-2">
+                <button id="btn-tab-products" onclick="switchAdminSubTab('products')" class="btn-tab text-xs md:text-sm font-bold text-brand-gold border-b-2 border-brand-gold pb-2 px-4 shrink-0">
+                    <i class="fa-solid fa-boxes-stacked mr-2"></i>Inventario
+                </button>
+                <button id="btn-tab-orders" onclick="switchAdminSubTab('orders')" class="btn-tab text-xs md:text-sm font-medium text-gray-500 hover:text-brand-dark pb-2 px-4 shrink-0">
+                    <i class="fa-solid fa-truck-ramp-box mr-2"></i>Confirmación Envíos
+                </button>
+                <button id="btn-tab-customers" onclick="switchAdminSubTab('customers')" class="btn-tab text-xs md:text-sm font-medium text-gray-500 hover:text-brand-dark pb-2 px-4 shrink-0">
+                    <i class="fa-solid fa-users mr-2"></i>Clientes DB
+                </button>
+                <button id="btn-tab-guides" onclick="switchAdminSubTab('guides')" class="btn-tab text-xs md:text-sm font-medium text-gray-500 hover:text-brand-dark pb-2 px-4 shrink-0">
+                    <i class="fa-solid fa-file-invoice mr-2"></i>Guías de Envío
+                </button>
+                <button id="btn-tab-shipping-fees" onclick="switchAdminSubTab('shipping-fees')" class="btn-tab text-xs md:text-sm font-medium text-gray-500 hover:text-brand-dark pb-2 px-4 shrink-0">
+                    <i class="fa-solid fa-hand-holding-dollar mr-2"></i>Cobro de Envío
+                </button>
+                <button id="btn-tab-picking" onclick="switchAdminSubTab('picking')" class="btn-tab text-xs md:text-sm font-medium text-gray-500 hover:text-brand-dark pb-2 px-4 shrink-0">
+                    <i class="fa-solid fa-clipboard-check mr-2"></i>Picking Alistamiento
+                </button>
+            </div>
+
+            <!-- CONTENIDO DE PESTAÑAS ADMIN -->
+
+            <!-- Pestaña 1: Inventario -->
+            <div id="admin-tab-products" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-lg text-brand-dark">Catálogo e Inventario de Joyas</h3>
+                    <button onclick="openAddProductModal()" class="bg-brand-gold hover:bg-amber-600 text-brand-dark font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-plus"></i> Agregar Nuevo Producto
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-brand-cream text-brand-dark text-xs uppercase font-bold border-b border-brand-taupe">
+                                <th class="px-4 py-3">SKU</th>
+                                <th class="px-4 py-3">Producto</th>
+                                <th class="px-4 py-3">Categoría</th>
+                                <th class="px-4 py-3">Precio</th>
+                                <th class="px-4 py-3">Stock</th>
+                                <th class="px-4 py-3 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-products-table" class="divide-y divide-gray-100">
+                            <!-- Se renderiza dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Confirmación Envíos -->
+            <div id="admin-tab-orders" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-brand-dark">Confirmación de Envíos en Tiempo Real</h3>
+                        <p class="text-xs text-gray-500">Confirma los despachos una vez validado el pago con el cliente</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-brand-cream text-brand-dark text-xs uppercase font-bold border-b border-brand-taupe">
+                                <th class="px-4 py-3">Nro. Pedido</th>
+                                <th class="px-4 py-3">Cliente</th>
+                                <th class="px-4 py-3">Fecha</th>
+                                <th class="px-4 py-3">Piezas</th>
+                                <th class="px-4 py-3">Total</th>
+                                <th class="px-4 py-3">Seguimiento / Pago</th>
+                                <th class="px-4 py-3 text-right">Acción Despacho</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-table" class="divide-y divide-gray-100">
+                            <!-- Se renderiza dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 3: Clientes DB -->
+            <div id="admin-tab-customers" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-brand-dark">Base de Datos de Clientes Registrados</h3>
+                        <p class="text-xs text-gray-500">Contactos recolectados directamente desde el Carrito de Compras</p>
+                    </div>
+                    <button onclick="exportCustomersCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> Exportar Excel (.csv)
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-brand-cream text-brand-dark text-xs uppercase font-bold border-b border-brand-taupe">
+                                <th class="px-4 py-3">Nombre Completo</th>
+                                <th class="px-4 py-3">WhatsApp / Celular</th>
+                                <th class="px-4 py-3">Correo Electrónico</th>
+                                <th class="px-4 py-3">Ciudad</th>
+                                <th class="px-4 py-3">Dirección Envío</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-customers-table" class="divide-y divide-gray-100">
+                            <!-- Se renderiza dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 4: Guías de Envío -->
+            <div id="admin-tab-guides" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-brand-dark">Guías de Envío & Trazabilidad QR</h3>
+                        <p class="text-xs text-gray-500">Guías generadas automáticamente con datos del cliente y código QR impreso</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-brand-cream text-brand-dark text-xs uppercase font-bold border-b border-brand-taupe">
+                                <th class="px-4 py-3">Nro. Guía</th>
+                                <th class="px-4 py-3">ID Pedido</th>
+                                <th class="px-4 py-3">Destinatario</th>
+                                <th class="px-4 py-3">Estado</th>
+                                <th class="px-4 py-3 text-right">Imprimir / PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-guides-table" class="divide-y divide-gray-100">
+                            <!-- Se renderiza dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 5: Cobro de Envío -->
+            <div id="admin-tab-shipping-fees" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6 hidden">
+                <h3 class="font-bold text-lg text-brand-dark mb-2">Configuración del Cobro de Envío Nacional</h3>
+                <p class="text-xs text-gray-500 mb-6">Activa/desactiva el envío o modifica el valor de la tarifa manualmente en tiempo real.</p>
+
+                <div class="max-w-md bg-brand-cream p-5 rounded-xl border border-brand-taupe space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-brand-dark">Estado del Cobro de Envío</h4>
+                            <p class="text-xs text-brand-muted" id="shipping-rate-label">Tarifa Actual: $12.000 COP</p>
+                        </div>
+                        <button id="toggle-shipping-btn" onclick="toggleShippingCharge()" class="bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors">
+                            ENVÍO GRATIS ACTIVADO
+                        </button>
+                    </div>
+
+                    <div class="pt-3 border-t border-brand-taupe space-y-2">
+                        <label class="block text-xs font-bold text-brand-dark">Modificar Costo de Envío Manual (COP)</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-gray-600">$</span>
+                            <input type="number" id="manual-shipping-input" value="12000" min="0" step="500" class="w-full text-xs px-3 py-2 border border-brand-taupe rounded-lg font-bold text-brand-dark bg-white focus:outline-none focus:border-brand-gold">
+                            <button onclick="updateManualShippingCost()" class="bg-brand-dark hover:bg-brand-gold text-brand-gold hover:text-brand-dark font-bold text-xs px-4 py-2 rounded-lg transition-colors shrink-0">
+                                Guardar Valor
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="shipping-status-detail" class="text-xs text-stone-600 bg-white p-3 rounded-lg border border-brand-taupe">
+                        Actualmente el envío se muestra como <strong>GRATIS</strong> en el carrito de compras.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 6: Picking Alistamiento -->
+            <div id="admin-tab-picking" class="bg-white rounded-xl shadow-xs border border-brand-taupe p-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-brand-dark">Órdenes de Picking para Alistamiento en Bodega</h3>
+                        <p class="text-xs text-gray-500">Lista de verificación de referencias para empaque de joyeros</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-brand-cream text-brand-dark text-xs uppercase font-bold border-b border-brand-taupe">
+                                <th class="px-4 py-3">ID Pedido</th>
+                                <th class="px-4 py-3">Cliente</th>
+                                <th class="px-4 py-3">Destino</th>
+                                <th class="px-4 py-3">Referencias</th>
+                                <th class="px-4 py-3">Estado Alistamiento</th>
+                                <th class="px-4 py-3 text-right">Imp. Orden Picking</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-picking-table" class="divide-y divide-gray-100">
+                            <!-- Se renderiza dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- DRAWER LATERAL: CARRITO DE COMPRAS CON FORMULARIO INTEGRADO DE DATOS -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity" onclick="toggleCartDrawer()"></div>
+
+        <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <div class="pointer-events-auto w-screen max-w-md bg-white shadow-2xl flex flex-col">
+                
+                <!-- Encabezado del Carrito -->
+                <div class="bg-brand-dark text-white px-5 py-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-bag-shopping text-brand-gold text-lg"></i>
+                        <h3 class="font-serif-title font-bold text-lg">Resumen de tu Compra</h3>
+                    </div>
+                    <button onclick="toggleCartDrawer()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Cuerpo Scrollable -->
+                <div class="flex-1 overflow-y-auto p-5 space-y-6">
+                    
+                    <!-- Lista de Productos en Carrito -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider border-b border-brand-taupe pb-1">1. Piezas Seleccionadas</h4>
+                        <div id="cart-items" class="space-y-3">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Resumen de Costos -->
+                    <div class="bg-brand-cream p-4 rounded-xl border border-brand-taupe space-y-2 text-xs">
+                        <div class="flex justify-between text-brand-muted">
+                            <span>Subtotal Joyas:</span>
+                            <span id="cart-subtotal" class="font-bold text-brand-dark">$0</span>
+                        </div>
+                        <div class="flex justify-between text-brand-muted">
+                            <span>Costo de Envío:</span>
+                            <span id="cart-shipping-fee" class="font-bold text-emerald-600">¡GRATIS!</span>
+                        </div>
+                        <div class="flex justify-between text-sm font-bold text-brand-dark pt-2 border-t border-brand-taupe">
+                            <span>Total a Pagar:</span>
+                            <span id="cart-total" class="font-serif-title text-base text-brand-gold font-bold">$0</span>
+                        </div>
+                    </div>
+
+                    <!-- Datos de Pago Bancario / Transferencia -->
+                    <div class="bg-stone-900 text-white p-3.5 rounded-xl space-y-2 border border-brand-gold/40 text-xs">
+                        <div class="flex items-center justify-between text-brand-gold font-bold">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-mobile-retro"></i> Medios de Pago Habilitados
+                            </span>
+                            <span class="text-[10px] bg-brand-gold/20 px-2 py-0.5 rounded-md text-brand-gold uppercase font-bold">Transferencia</span>
+                        </div>
+                        <p class="text-[11px] text-stone-300">Realiza tu pago mediante <strong>Daviplata</strong> o <strong>Llave Bre-B</strong> al número:</p>
+                        
+                        <div class="bg-stone-800 p-2.5 rounded-lg border border-stone-700 space-y-2">
+                            <div class="flex items-center justify-between border-b border-stone-700 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-key text-brand-gold text-xs" title="Llave Bre-B y Daviplata"></i>
+                                    <span class="font-mono font-bold text-brand-gold text-base tracking-wider">311 509 2400</span>
+                                </div>
+                                <span class="text-[10px] text-stone-400 font-semibold">Titular: Sami Accesorios</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-around text-[11px] pt-0.5 font-semibold">
+                                <span class="flex items-center gap-1 text-emerald-400">
+                                    <i class="fa-solid fa-circle-check text-[10px]"></i> Daviplata
+                                </span>
+                                <span class="text-stone-500">•</span>
+                                <span class="flex items-center gap-1 text-amber-400">
+                                    <i class="fa-solid fa-circle-check text-[10px]"></i> Llave Bre-B
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario Datos de Envío del Cliente -->
+                    <form id="checkout-customer-form" class="space-y-3 pt-2">
+                        <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider border-b border-brand-taupe pb-1">2. Datos de Envío & Destinatario</h4>
+                        
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 mb-1">Nombre Completo *</label>
+                            <input type="text" id="cust-name" required placeholder="Ej. Maria Fernanda Gómez" class="w-full text-xs px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-brand-gold bg-stone-50">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-bold text-stone-700 mb-1">WhatsApp / Teléfono *</label>
+                                <input type="tel" id="cust-phone" required placeholder="311 000 0000" class="w-full text-xs px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-brand-gold bg-stone-50">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-stone-700 mb-1">Ciudad Destino *</label>
+                                <input type="text" id="cust-city" required placeholder="Ej. Bogotá / Medellín" class="w-full text-xs px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-brand-gold bg-stone-50">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 mb-1">Dirección de Entrega Exacta *</label>
+                            <input type="text" id="cust-address" required placeholder="Calle, Avenid, Apto / Casa" class="w-full text-xs px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-brand-gold bg-stone-50">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 mb-1">Correo Electrónico *</label>
+                            <input type="email" id="cust-email" required placeholder="cliente@correo.com" class="w-full text-xs px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-brand-gold bg-stone-50">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Botón Único Físico de Checkout -->
+                <div class="p-4 border-t border-brand-taupe bg-white shadow-lg">
+                    <button onclick="submitOrderCheckout()" class="w-full bg-brand-dark hover:bg-brand-gold text-brand-gold hover:text-brand-dark font-bold text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border border-brand-gold">
+                        <i class="fa-brands fa-whatsapp text-lg"></i>
+                        <span>Confirmar y Enviar Pedido</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INGRESO SAMFE ADMIN -->
+    <div id="login-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 text-center">
+            <div class="fixed inset-0 bg-black/70 backdrop-blur-xs" onclick="closeLoginModal()"></div>
+            <div class="inline-block w-full max-w-sm p-6 overflow-hidden text-left bg-white rounded-2xl shadow-2xl transform transition-all relative z-10 border border-brand-taupe">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-brand-dark text-brand-gold flex items-center justify-center font-serif text-2xl font-bold mx-auto mb-2">S</div>
+                    <h3 class="font-serif-title text-xl font-bold text-brand-dark">Acceso SAMFE Admin</h3>
+                    <p class="text-xs text-brand-muted mt-1">Ingrese sus credenciales de administrador</p>
+                </div>
+                <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-brand-dark mb-1">Usuario SAMFE</label>
+                        <input type="text" id="login-username" required placeholder="Ingrese usuario" class="w-full text-xs px-3 py-2.5 border border-brand-taupe rounded-lg focus:outline-none focus:border-brand-gold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-brand-dark mb-1">Contraseña</label>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full text-xs px-3 py-2.5 border border-brand-taupe rounded-lg focus:outline-none focus:border-brand-gold">
+                    </div>
+                    <button type="submit" class="w-full bg-brand-dark hover:bg-brand-gold text-brand-gold hover:text-brand-dark font-bold text-xs py-3 rounded-lg transition-colors">
+                        Ingresar al Panel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRA INFERIOR DE SERVICIO AL CLIENTE -->
+    <div class="fixed bottom-0 left-0 right-0 z-30 bg-stone-900/95 backdrop-blur-md text-white border-t border-brand-gold/30 px-4 py-2.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="font-bold text-brand-gold">Servicio al Cliente SAMI:</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="https://wa.me/573115092400" target="_blank" class="flex items-center gap-1.5 text-stone-200 hover:text-brand-gold transition-colors font-medium">
+                <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
+                <span>311 509 2400</span>
+            </a>
+            <span class="text-stone-600">|</span>
+            <a href="mailto:clientesami@gmail.com" class="flex items-center gap-1.5 text-stone-200 hover:text-brand-gold transition-colors font-medium">
+                <i class="fa-solid fa-envelope text-brand-gold text-xs"></i>
+                <span>clientesami@gmail.com</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR/EDITAR PRODUCTO -->
+    <div id="product-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 text-center">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-xs" onclick="closeProductModal()"></div>
+            <div class="inline-block w-full max-w-lg p-6 overflow-hidden text-left bg-white rounded-2xl shadow-2xl transform transition-all relative z-10 border border-brand-taupe">
+                <h3 id="product-modal-title" class="font-serif-title text-xl font-bold text-brand-dark mb-4">Agregar Nuevo Producto</h3>
+                <form id="product-form" onsubmit="saveProductForm(event)" class="space-y-3 text-xs">
+                    <input type="hidden" id="prod-id">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">SKU *</label>
+                            <input type="text" id="prod-sku" required class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">Categoría *</label>
+                            <select id="prod-category" required class="w-full px-3 py-2 border rounded-lg bg-white">
+                                <option value="Pulseras">Pulseras</option>
+                                <option value="Anillos">Anillos</option>
+                                <option value="Collares">Collares</option>
+                                <option value="Aretes">Aretes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-1">Nombre de la Joya *</label>
+                        <input type="text" id="prod-name" required class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">Precio COP *</label>
+                            <input type="number" id="prod-price" required min="0" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-1">Stock Inicial *</label>
+                            <input type="number" id="prod-stock" required min="0" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-1">URL Imagen Principal *</label>
+                        <input type="url" id="prod-image" required class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-1">Descripción Breve</label>
+                        <textarea id="prod-desc" rows="2" class="w-full px-3 py-2 border rounded-lg"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="closeProductModal()" class="px-4 py-2 border rounded-lg font-bold text-gray-600">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-dark text-brand-gold font-bold rounded-lg hover:bg-brand-gold hover:text-brand-dark">Guardar Producto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA TIENDA -->
+    <footer class="bg-brand-dark text-white border-t border-stone-800 mt-auto pb-12">
+        <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-stone-400">
+            <div class="flex items-center gap-3">
+                <span class="font-serif-title font-bold text-white text-base">SAMI ACCESORIOS</span>
+                <span>© 2026 Todos los derechos reservados</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <button onclick="openLoginModal()" class="text-stone-400 hover:text-brand-gold transition-colors font-medium flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-[10px]"></i> Acceso SAMFE Admin
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
+    <script>
+        // --- BASE DE DATOS INICIAL --- //
+        const INITIAL_PRODUCTS = [
+            { id: 1, sku: "PUL-01", name: "Pulsera Ojo Turco & Oro 18k", category: "Pulseras", price: 31800, stock: 12, image: "https://images.unsplash.com/photo-1611591475176-664e1c2552fc?w=500&auto=format&fit=crop&q=80", description: "Pulsera tejida con esferas de oro laminado de 18k y dije de ojo turco de protección." },
+            { id: 2, sku: "PUL-02", name: "Pulsera Flor de Loto Dorada", category: "Pulseras", price: 35000, stock: 8, image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80", description: "Elegante dije en forma de loto pulido en oro fino de alta durabilidad." },
+            { id: 3, sku: "ANI-01", name: "Anillo Circones Ajustable", category: "Anillos", price: 28000, stock: 15, image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&auto=format&fit=crop&q=80", description: "Anillo ajustable de baño en oro decorado con cristales de circonia nítidos." },
+            { id: 4, sku: "COL-01", name: "Collar Cadena Tejido Veneciano", category: "Collares", price: 42000, stock: 6, image: "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=500&auto=format&fit=crop&q=80", description: "Cadena delgada con brillo espejado resistente al uso diario." }
+        ];
+
+        // --- ESTADO GLOBAL --- //
+        let products = JSON.parse(localStorage.getItem('sami_products')) || INITIAL_PRODUCTS;
+        let cart = JSON.parse(localStorage.getItem('sami_cart')) || [];
+        let wishlist = JSON.parse(localStorage.getItem('sami_wishlist')) || [];
+        let orders = JSON.parse(localStorage.getItem('sami_orders')) || [
+            { id: "SAM-801", customerName: "Clara Mendoza", phone: "3124567890", city: "Medellín", address: "Carrera 43A # 12-45", email: "clara@gmail.com", date: "2026-03-01", items: 2, total: 66800, status: "Pendiente", paymentStatus: "Pago Confirmado" }
+        ];
+        let customers = JSON.parse(localStorage.getItem('sami_customers')) || [
+            { id: 1, name: "Clara Mendoza", phone: "3124567890", email: "clara@gmail.com", city: "Medellín", address: "Carrera 43A # 12-45" }
+        ];
+        let shipmentGuides = JSON.parse(localStorage.getItem('sami_guides')) || [];
+        let isAdminLoggedIn = localStorage.getItem('sami_admin_logged') === 'true';
+        let shippingCostAmount = parseInt(localStorage.getItem('sami_shipping_cost_amount')) || 12000;
+        let isShippingCharged = localStorage.getItem('sami_charge_shipping') === 'true';
+        let activeCategory = 'all';
+
+        // --- PERSISTENCIA --- //
+        function saveData() {
+            localStorage.setItem('sami_products', JSON.stringify(products));
+            localStorage.setItem('sami_cart', JSON.stringify(cart));
+            localStorage.setItem('sami_wishlist', JSON.stringify(wishlist));
+            localStorage.setItem('sami_orders', JSON.stringify(orders));
+            localStorage.setItem('sami_customers', JSON.stringify(customers));
+            localStorage.setItem('sami_guides', JSON.stringify(shipmentGuides));
+            localStorage.setItem('sami_charge_shipping', isShippingCharged);
+            localStorage.setItem('sami_shipping_cost_amount', shippingCostAmount);
+            
+            // Actualización en tiempo real de las tablas del panel de administración
+            if (isAdminLoggedIn) {
+                renderAdminTables();
+            }
+        }
+
+        // --- UTILS & TOAST --- //
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+        }
+
+        // --- MODAL DE LOGIN ADMIN --- //
+        function openLoginModal() {
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+
+            if (u === 'bryan' && p === '920510') {
+                isAdminLoggedIn = true;
+                localStorage.setItem('sami_admin_logged', 'true');
+                closeLoginModal();
+                switchTab('admin');
+                showToast("Bienvenido al Panel SAMFE Admin");
+            } else {
+                showToast("Usuario o contraseña incorrectos");
+            }
+        }
+
+        // --- NAVEGACIÓN Y VISTAS --- //
+        function switchTab(tab) {
+            const storeView = document.getElementById('store-view');
+            const adminView = document.getElementById('admin-view');
+            if (tab === 'admin') {
+                if (!isAdminLoggedIn) {
+                    openLoginModal();
+                    return;
+                }
+                storeView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                renderAdminTables();
+            } else {
+                storeView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+            }
+        }
+
+        function switchAdminSubTab(tabName) {
+            const tabs = ['products', 'orders', 'customers', 'guides', 'shipping-fees', 'picking'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`admin-tab-${t}`);
+                const btn = document.getElementById(`btn-tab-${t}`);
+                if (view) view.classList.toggle('hidden', t !== tabName);
+                if (btn) {
+                    btn.className = t === tabName 
+                        ? "btn-tab text-xs md:text-sm font-bold text-brand-gold border-b-2 border-brand-gold pb-2 px-4 shrink-0"
+                        : "btn-tab text-xs md:text-sm font-medium text-gray-500 hover:text-brand-dark pb-2 px-4 shrink-0";
+                }
+            });
+        }
+
+        // --- TIENDA & RENDER --- //
+        function filterCategory(cat) {
+            activeCategory = cat || 'all';
+            const catTitle = document.getElementById('category-title');
+            if (catTitle) {
+                catTitle.textContent = activeCategory === 'all' ? 'Catálogo de Joyería' : activeCategory;
+            }
+            renderProducts();
+        }
+
+        function toggleWishlist(id) {
+            const idx = wishlist.indexOf(id);
+            if (idx === -1) {
+                wishlist.push(id);
+                showToast("Añadido a tus favoritos");
+            } else {
+                wishlist.splice(idx, 1);
+                showToast("Removido de tus favoritos");
+            }
+            saveData();
+            renderProducts();
+            const wCount = document.getElementById('wishlist-count');
+            if (wCount) {
+                wCount.textContent = wishlist.length;
+                wCount.classList.toggle('hidden', wishlist.length === 0);
+            }
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            if (!grid) return;
+
+            const categoryFilter = typeof activeCategory !== 'undefined' ? activeCategory : 'all';
+            const filtered = categoryFilter === 'all' ? products : products.filter(p => p.category === categoryFilter);
+            const countLabel = document.getElementById('product-count-label');
+            if (countLabel) countLabel.textContent = `${filtered.length} Piezas`;
+
+            grid.innerHTML = filtered.map(p => {
+                const isFav = wishlist.includes(p.id);
+                return `
+                    <div class="bg-white rounded-xl border border-brand-taupe shadow-xs overflow-hidden group flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div class="relative overflow-hidden aspect-square bg-brand-cream">
+                            <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <button onclick="toggleWishlist(${p.id})" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-stone-700 hover:text-red-500 transition-colors">
+                                <i class="${isFav ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart'}"></i>
+                            </button>
+                        </div>
+                        <div class="p-3 flex-grow flex flex-col justify-between space-y-2">
+                            <div>
+                                <span class="text-[10px] text-brand-gold font-bold uppercase tracking-wider">${p.category}</span>
+                                <h4 class="font-bold text-xs text-brand-dark line-clamp-1">${p.name}</h4>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-brand-taupe/50">
+                                <span class="font-serif-title font-bold text-sm text-brand-dark">$${p.price.toLocaleString('es-CO')}</span>
+                                <button onclick="addToCart(${p.id})" class="bg-brand-dark text-white hover:bg-brand-gold hover:text-brand-dark text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                    <i class="fa-solid fa-plus text-[10px]"></i> Añadir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- CARRITO & DESPACHOS --- //
+        function toggleCartDrawer() {
+            document.getElementById('cart-drawer').classList.toggle('hidden');
+        }
+
+        function addToCart(id) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity++;
+            } else {
+                cart.push({ id, quantity: 1 });
+            }
+            saveData();
+            updateCartUI();
+            showToast("Joya agregada al carrito");
+        }
+
+        function changeCartQuantity(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (!item) return;
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.id !== id);
+            }
+            saveData();
+            updateCartUI();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(i => i.id !== id);
+            saveData();
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items');
+            const cartCountBadge = document.getElementById('cart-count');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const shippingEl = document.getElementById('cart-shipping-fee');
+            const totalEl = document.getElementById('cart-total');
+
+            const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (cartCountBadge) cartCountBadge.textContent = totalQty;
+
+            if (!container) return;
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-stone-400">
+                        <i class="fa-solid fa-bag-shopping text-3xl mb-2 text-brand-gold"></i>
+                        <p class="text-xs">Tu carrito está vacío</p>
+                    </div>
+                `;
+                subtotalEl.textContent = "$0";
+                shippingEl.textContent = "$0";
+                totalEl.textContent = "$0";
+                return;
+            }
+
+            let subtotal = 0;
+            container.innerHTML = cart.map(item => {
+                const p = products.find(prod => prod.id === item.id);
+                if (!p) return '';
+                const itemTotal = p.price * item.quantity;
+                subtotal += itemTotal;
+
+                return `
+                    <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-brand-taupe shadow-xs">
+                        <img src="${p.image}" alt="${p.name}" class="w-20 h-20 min-w-[80px] rounded-lg object-cover border border-brand-taupe">
+                        <div class="flex-grow min-w-0">
+                            <h4 class="font-bold text-xs text-brand-dark truncate">${p.name}</h4>
+                            <div class="text-[11px] text-brand-muted">$${p.price.toLocaleString('es-CO')} c/u</div>
+                            <div class="flex items-center justify-between mt-2">
+                                <div class="flex items-center border rounded-lg bg-stone-50 px-1.5 py-0.5">
+                                    <button onclick="changeCartQuantity(${p.id}, -1)" class="px-1 font-bold text-xs">-</button>
+                                    <span class="px-2 font-bold text-xs">${item.quantity}</span>
+                                    <button onclick="changeCartQuantity(${p.id}, 1)" class="px-1 font-bold text-xs">+</button>
+                                </div>
+                                <span class="font-bold text-xs text-brand-dark">$${itemTotal.toLocaleString('es-CO')}</span>
+                            </div>
+                        </div>
+                        <button onclick="removeFromCart(${p.id})" class="text-gray-300 hover:text-red-500 p-1">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            const shippingFee = isShippingCharged ? shippingCostAmount : 0;
+            const grandTotal = subtotal + shippingFee;
+
+            subtotalEl.textContent = `$${subtotal.toLocaleString('es-CO')}`;
+            shippingEl.textContent = shippingFee > 0 ? `$${shippingFee.toLocaleString('es-CO')}` : "¡GRATIS!";
+            totalEl.textContent = `$${grandTotal.toLocaleString('es-CO')}`;
+        }
+
+        function submitOrderCheckout() {
+            if (cart.length === 0) {
+                showToast("Agrega productos al carrito primero");
+                return;
+            }
+
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+            const city = document.getElementById('cust-city').value.trim();
+            const address = document.getElementById('cust-address').value.trim();
+            const email = document.getElementById('cust-email').value.trim();
+
+            if (!name || !phone || !city || !address || !email) {
+                showToast("Completa todos los campos obligatorios (*)");
+                return;
+            }
+
+            // Guardar o actualizar cliente en tiempo real
+            const existingCust = customers.find(c => c.email === email || c.phone === phone);
+            if (!existingCust) {
+                customers.push({ id: Date.now(), name, phone, email, city, address });
+            }
+
+            // Capturar ítems exactos para Picking / Bodega
+            const orderItems = cart.map(item => {
+                const p = products.find(prod => prod.id === item.id);
+                return {
+                    id: item.id,
+                    sku: p ? p.sku : 'REF-GEN',
+                    name: p ? p.name : 'Joya Sami',
+                    quantity: item.quantity,
+                    price: p ? p.price : 0
+                };
+            });
+
+            // Calcular Totales
+            const subtotal = cart.reduce((sum, item) => {
+                const p = products.find(prod => prod.id === item.id);
+                return sum + (p ? p.price * item.quantity : 0);
+            }, 0);
+            const total = subtotal + (isShippingCharged ? shippingCostAmount : 0);
+            const orderId = `SAM-${Math.floor(100 + Math.random() * 900)}`;
+
+            // Guardar Pedido con detalles de alistamiento (Picking)
+            const newOrder = {
+                id: orderId,
+                customerName: name,
+                phone,
+                city,
+                address,
+                email,
+                date: new Date().toISOString().split('T')[0],
+                items: cart.reduce((s, i) => s + i.quantity, 0),
+                orderDetails: orderItems,
+                total,
+                status: "Pendiente",
+                paymentStatus: "Pendiente por Confirmar"
+            };
+
+            orders.unshift(newOrder);
+
+            // Limpiar Carrito
+            cart = [];
+            saveData();
+            updateCartUI();
+            toggleCartDrawer();
+
+            // Abrir WhatsApp
+            const message = `*NUEVO PEDIDO DE COMPRA - SAMI ACCESORIOS*%0A%0A` +
+                `*ID Pedido:* ${orderId}%0A` +
+                `*Cliente:* ${name}%0A` +
+                `*Teléfono:* ${phone}%0A` +
+                `*Ciudad:* ${city}%0A` +
+                `*Dirección:* ${address}%0A` +
+                `*Correo:* ${email}%0A` +
+                `*Total a Pagar:* $${total.toLocaleString('es-CO')}%0A%0A` +
+                `He realizado la compra y deseo coordinar el envío/pago.`;
+            
+            window.open(`https://wa.me/573115092400?text=${message}`, '_blank');
+            showToast("Pedido registrado. Redirigiendo a WhatsApp...");
+        }
+
+        // --- CAMBIO DE ESTADO DE PAGO EN TIEMPO REAL --- //
+        function togglePaymentStatus(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            if (order.paymentStatus === "Pendiente por Confirmar") {
+                order.paymentStatus = "Pago Confirmado";
+                showToast(`Pago confirmado para pedido ${order.id}. Generando orden de alistamiento...`);
+            } else if (order.paymentStatus === "Pago Confirmado") {
+                order.paymentStatus = "Alistamiento Listo";
+                showToast(`Orden de alistamiento lista para empaque.`);
+            } else {
+                order.paymentStatus = "Pendiente por Confirmar";
+            }
+
+            saveData();
+        }
+
+        function confirmOrderShipping(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const carrierSelect = document.getElementById(`carrier-select-${orderId}`);
+            const carrier = carrierSelect ? carrierSelect.value : 'Interrapidísimo';
+            const guideNumber = `GUA-${Math.floor(100000 + Math.random() * 900000)}`;
+
+            order.status = "Enviado";
+            order.paymentStatus = "Alistamiento Listo";
+
+            // Generar Guía en Tiempo Real
+            const existingGuide = shipmentGuides.find(g => g.orderId === orderId);
+            if (!existingGuide) {
+                shipmentGuides.unshift({
+                    guideNumber,
+                    orderId: order.id,
+                    recipient: order.customerName,
+                    city: order.city,
+                    address: order.address,
+                    phone: order.phone,
+                    carrier,
+                    date: new Date().toISOString().split('T')[0],
+                    status: "En Tránsito"
+                });
+            }
+
+            saveData();
+            showToast(`Pedido ${order.id} despachado. Guía ${guideNumber} generada.`);
+        }
+
+        function updateManualShippingCost() {
+            const inputVal = parseInt(document.getElementById('manual-shipping-input').value);
+            if (isNaN(inputVal) || inputVal < 0) {
+                showToast("Por favor ingrese un valor de envío válido.");
+                return;
+            }
+            shippingCostAmount = inputVal;
+            saveData();
+            updateShippingUI();
+            updateCartUI();
+            showToast(`Costo de envío modificado a $${shippingCostAmount.toLocaleString('es-CO')}`);
+        }
+
+        function toggleShippingCharge() {
+            isShippingCharged = !isShippingCharged;
+            saveData();
+            updateShippingUI();
+            updateCartUI();
+            showToast(isShippingCharged ? `Cobro de Envío Activado ($${shippingCostAmount.toLocaleString('es-CO')})` : "Envío Gratis Activado");
+        }
+
+        function updateShippingUI() {
+            const btn = document.getElementById('toggle-shipping-btn');
+            const badge = document.getElementById('badge-shipping-status');
+            const detail = document.getElementById('shipping-status-detail');
+            const rateLabel = document.getElementById('shipping-rate-label');
+            const inputEl = document.getElementById('manual-shipping-input');
+
+            if (inputEl) {
+                inputEl.value = shippingCostAmount;
+            }
+
+            if (rateLabel) {
+                rateLabel.textContent = `Tarifa Actual: $${shippingCostAmount.toLocaleString('es-CO')}`;
+            }
+
+            if (btn) {
+                btn.textContent = isShippingCharged ? "DESACTIVAR COBRO (GRATIS)" : "ACTIVAR COBRO DE ENVÍO";
+                btn.className = isShippingCharged 
+                    ? "bg-amber-600 text-white font-bold text-xs px-4 py-2 rounded-lg"
+                    : "bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-lg";
+            }
+            if (badge) {
+                badge.textContent = isShippingCharged ? `Envío $${shippingCostAmount.toLocaleString('es-CO')}` : "Envío Gratis";
+            }
+            if (detail) {
+                detail.innerHTML = isShippingCharged 
+                    ? `El costo de envío de <strong>$${shippingCostAmount.toLocaleString('es-CO')}</strong> se sumará a los pedidos.`
+                    : "Actualmente el envío se ofrece como <strong>GRATIS</strong> en la tienda.";
+            }
+        }
+
+        function renderAdminTables() {
+            // Tabla Inventario
+            const pTable = document.getElementById('admin-products-table');
+            if (pTable) {
+                pTable.innerHTML = products.map(p => `
+                    <tr class="hover:bg-stone-50 text-xs">
+                        <td class="px-4 py-3 font-mono">${p.sku}</td>
+                        <td class="px-4 py-3 flex items-center gap-2">
+                            <img src="${p.image}" class="w-8 h-8 rounded object-cover border">
+                            <span class="font-bold">${p.name}</span>
+                        </td>
+                        <td class="px-4 py-3">${p.category}</td>
+                        <td class="px-4 py-3 font-bold">$${p.price.toLocaleString('es-CO')}</td>
+                        <td class="px-4 py-3 font-bold ${p.stock < 5 ? 'text-red-500' : 'text-emerald-600'}">${p.stock} u.</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="openEditProductModal(${p.id})" class="text-brand-dark hover:text-brand-gold p-1 font-bold"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct(${p.id})" class="text-gray-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Tabla Ordenes
+            const oTable = document.getElementById('admin-orders-table');
+            if (oTable) {
+                oTable.innerHTML = orders.map(o => {
+                    const payStatus = o.paymentStatus || "Pendiente por Confirmar";
+                    let badgeColor = "bg-amber-100 text-amber-800 border-amber-300";
+                    if (payStatus === "Pago Confirmado") badgeColor = "bg-blue-100 text-blue-800 border-blue-300";
+                    if (payStatus === "Alistamiento Listo") badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-300";
+
+                    return `
+                    <tr class="hover:bg-stone-50 text-xs">
+                        <td class="px-4 py-3 font-mono font-bold text-brand-gold">${o.id}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-bold">${o.customerName || o.customer}</div>
+                            <div class="text-[10px] text-gray-400">${o.phone || ''} | ${o.city || ''}</div>
+                        </td>
+                        <td class="px-4 py-3">${o.date}</td>
+                        <td class="px-4 py-3">${o.items} u.</td>
+                        <td class="px-4 py-3 font-bold">$${o.total.toLocaleString('es-CO')}</td>
+                        <td class="px-4 py-3">
+                            <button onclick="togglePaymentStatus('${o.id}')" title="Clic para cambiar estado de pago" class="px-2.5 py-1 rounded-full text-[10px] font-bold border transition-transform active:scale-95 flex items-center gap-1 ${badgeColor}">
+                                <i class="fa-solid fa-arrows-rotate text-[9px]"></i> ${payStatus}
+                            </button>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            ${o.status === 'Pendiente' ? `
+                                <div class="flex items-center justify-end gap-1">
+                                    <select id="carrier-select-${o.id}" class="text-[11px] border rounded px-1 py-1">
+                                        <option value="Interrapidísimo">Interrapidísimo</option>
+                                        <option value="Servientrega">Servientrega</option>
+                                        <option value="Coordinadora">Coordinadora</option>
+                                        <option value="Envía">Envía</option>
+                                    </select>
+                                    <button onclick="confirmOrderShipping('${o.id}')" class="bg-brand-dark text-brand-gold font-bold px-2 py-1 rounded text-[10px]">Confirmar</button>
+                                </div>
+                            ` : `<span class="text-emerald-600 font-bold text-[10px]">Enviado</span>`}
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+
+            // Tabla Clientes DB
+            const cTable = document.getElementById('admin-customers-table');
+            if (cTable) {
+                cTable.innerHTML = customers.map(c => `
+                    <tr class="hover:bg-stone-50 text-xs">
+                        <td class="px-4 py-3 font-bold">${c.name}</td>
+                        <td class="px-4 py-3 font-mono">${c.phone}</td>
+                        <td class="px-4 py-3">${c.email}</td>
+                        <td class="px-4 py-3">${c.city}</td>
+                        <td class="px-4 py-3">${c.address}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Tabla Guías
+            const gTable = document.getElementById('admin-guides-table');
+            if (gTable) {
+                gTable.innerHTML = shipmentGuides.map(g => `
+                    <tr class="hover:bg-stone-50 text-xs">
+                        <td class="px-4 py-3 font-mono font-bold text-brand-gold">${g.guideNumber}</td>
+                        <td class="px-4 py-3 font-mono">${g.orderId}</td>
+                        <td class="px-4 py-3">${g.recipient} (${g.city})</td>
+                        <td class="px-4 py-3"><span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[10px] font-bold">${g.status}</span></td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="printShippingGuidePDF('${g.guideNumber}')" class="bg-brand-dark text-white font-bold text-[10px] px-2.5 py-1 rounded">PDF</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Tabla Picking
+            const pkTable = document.getElementById('admin-picking-table');
+            if (pkTable) {
+                pkTable.innerHTML = orders.map(o => `
+                    <tr class="hover:bg-stone-50 text-xs">
+                        <td class="px-4 py-3 font-mono font-bold text-brand-gold">${o.id}</td>
+                        <td class="px-4 py-3 font-bold">${o.customerName || o.customer}</td>
+                        <td class="px-4 py-3">${o.city || 'N/A'}</td>
+                        <td class="px-4 py-3 font-bold">${o.items} refs</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.status === 'Completado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span></td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="printPickingOrder('${o.id}')" class="bg-brand-gold text-brand-dark font-bold text-[10px] px-2.5 py-1 rounded shadow-xs hover:bg-amber-500 flex items-center gap-1 ml-auto">
+                                <i class="fa-solid fa-print"></i> Imp. Picking
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function exportCustomersCSV() {
+            if (customers.length === 0) return showToast("No hay clientes registrados");
+            let csv = "data:text/csv;charset=utf-8,ID,Nombre,Telefono,Email,Ciudad,Direccion\n";
+            customers.forEach(c => csv += `"${c.id}","${c.name}","${c.phone}","${c.email}","${c.city}","${c.address}"\n`);
+            const link = document.createElement("a");
+            link.href = encodeURI(csv);
+            link.download = `Clientes_Sami_Accesorios.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Clientes exportados en Excel (.csv)");
+        }
+
+        // --- GESTIÓN PRODUCTOS ADMIN --- //
+        function openAddProductModal() {
+            document.getElementById('product-form').reset();
+            document.getElementById('prod-id').value = '';
+            document.getElementById('product-modal-title').textContent = 'Agregar Nuevo Producto';
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function openEditProductModal(id) {
+            const p = products.find(prod => prod.id === id);
+            if (!p) return;
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-sku').value = p.sku;
+            document.getElementById('prod-name').value = p.name;
+            document.getElementById('prod-category').value = p.category;
+            document.getElementById('prod-price').value = p.price;
+            document.getElementById('prod-stock').value = p.stock;
+            document.getElementById('prod-image').value = p.image;
+            document.getElementById('prod-desc').value = p.description || '';
+            document.getElementById('product-modal-title').textContent = 'Editar Producto';
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        function saveProductForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const sku = document.getElementById('prod-sku').value;
+            const name = document.getElementById('prod-name').value;
+            const category = document.getElementById('prod-category').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            const image = document.getElementById('prod-image').value;
+            const description = document.getElementById('prod-desc').value;
+
+            if (id) {
+                const index = products.findIndex(p => p.id === parseInt(id));
+                if (index !== -1) {
+                    products[index] = { ...products[index], sku, name, category, price, stock, image, description };
+                }
+            } else {
+                products.push({ id: Date.now(), sku, name, category, price, stock, image, description });
+            }
+
+            saveData();
+            renderProducts();
+            renderAdminTables();
+            closeProductModal();
+            showToast("Producto guardado correctamente");
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id);
+            saveData();
+            renderProducts();
+            renderAdminTables();
+            showToast("Producto eliminado");
+        }
+
+        // --- GENERACIÓN DE DOCUMENTOS DE IMPRESIÓN --- //
+        function printShippingGuidePDF(guideNumber) {
+            const guide = shipmentGuides.find(g => g.guideNumber === guideNumber);
+            if (!guide) return;
+            const printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html>
+                <head>
+                    <title>Guía de Envío - ${guide.guideNumber}</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 25px; }
+                        .box { max-width: 500px; margin: auto; border: 2px solid #111; padding: 20px; border-radius: 8px; }
+                        h2 { text-align: center; margin-top: 0; color: #D4AF37; }
+                        .qr { text-align: center; margin-top: 15px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="box">
+                        <h2>SAMI ACCESORIOS - GUÍA DE DESPACHO</h2>
+                        <p><strong>Nro. Guía:</strong> ${guide.guideNumber} | <strong>Carrier:</strong> ${guide.carrier}</p>
+                        <p><strong>ID Pedido:</strong> ${guide.orderId} | <strong>Fecha:</strong> ${guide.date}</p>
+                        <hr>
+                        <p><strong>DESTINATARIO:</strong><br>${guide.recipient}<br>Ciudad: ${guide.city}<br>Dirección: ${guide.address}<br>Teléfono: ${guide.phone}</p>
+                        <div class="qr">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=SAMI-${guide.guideNumber}">
+                        </div>
+                    </div>
+                    <` + `script>
+                        window.onload = function() { window.print(); };
+                    <` + `/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        function printPickingOrder(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            // Construir lista de artículos/referencias con datos reales del pedido
+            let itemList = '';
+            if (order.orderDetails && order.orderDetails.length > 0) {
+                itemList = order.orderDetails.map(i => `
+                    <li><span class="check-box"></span> <strong>[${i.sku}]</strong> ${i.name} &mdash; <span style="color:#D4AF37;">x${i.quantity} u.</span></li>
+                `).join('');
+            } else {
+                itemList = `<li><span class="check-box"></span> <strong>[REF-GEN]</strong> Piezas seleccionadas en joyería x${order.items} unidades</li>`;
+            }
+
+            const printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html>
+                <head>
+                    <title>Orden de Picking - ${order.id}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #222; background: #fff; }
+                        .ticket { max-width: 550px; margin: auto; border: 2px dashed #D4AF37; padding: 25px; border-radius: 12px; background: #fff; }
+                        .header { text-align: center; border-bottom: 2px solid #1A1A1A; margin-bottom: 20px; padding-bottom: 10px; }
+                        .header h2 { margin: 0; color: #1A1A1A; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+                        .header p { margin: 4px 0 0; color: #D4AF37; font-weight: bold; font-size: 13px; }
+                        .info-grid { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+                        .info-grid td { padding: 6px 0; border-bottom: 1px solid #eee; }
+                        .info-grid td.label { font-weight: bold; color: #555; width: 35%; }
+                        .items-box { background: #FAF8F5; border: 1px solid #E8E2D9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        .items-box h4 { margin: 0 0 10px 0; color: #1A1A1A; font-size: 14px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #E8E2D9; padding-bottom: 5px; }
+                        .items-box ul { margin: 0; padding-left: 5px; font-size: 13px; font-weight: 600; color: #1A1A1A; list-style: none; }
+                        .items-box li { margin-bottom: 8px; font-size: 13px; }
+                        .qr-section { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; }
+                        .qr-section img { border: 4px solid #FAF8F5; border-radius: 8px; }
+                        .qr-section p { font-size: 11px; font-weight: bold; color: #666; margin-top: 6px; }
+                        .check-box { display: inline-block; width: 14px; height: 14px; border: 1.5px solid #333; margin-right: 8px; vertical-align: middle; border-radius: 3px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="ticket">
+                        <div class="header">
+                            <h2>SAMI ACCESORIOS</h2>
+                            <p>ORDEN DE PICKING Y ALISTAMIENTO DE BODEGA</p>
+                        </div>
+                        
+                        <table class="info-grid">
+                            <tr>
+                                <td class="label">Nro. de Orden:</td>
+                                <td style="font-weight: bold; font-size: 15px; color: #D4AF37;">${order.id}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Estado de Pago:</td>
+                                <td style="font-weight: bold; color: #059669;">${order.paymentStatus || 'Pago Confirmado'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Cliente Destinatario:</td>
+                                <td style="font-weight: bold;">${order.customerName || order.customer || 'Cliente Particular'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Teléfono de Contacto:</td>
+                                <td>${order.phone || '311 509 2400'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Ciudad Destino:</td>
+                                <td style="font-weight: bold;">${order.city || 'Colombia'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Dirección de Entrega:</td>
+                                <td>${order.address || 'Entrega a convenir'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Fecha de Pedido:</td>
+                                <td>${order.date || new Date().toLocaleDateString('es-CO')}</td>
+                            </tr>
+                        </table>
+
+                        <div class="items-box">
+                            <h4>Referencias a Empacar (Picking):</h4>
+                            <ul>
+                                ${itemList}
+                            </ul>
+                        </div>
+
+                        <div class="qr-section">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=PICKING-ORDER-${order.id}" alt="QR Orden">
+                            <p>Escanea este código QR para verificar la Orden Nro: <strong>${order.id}</strong></p>
+                        </div>
+                    </div>
+                    <` + `script>
+                        window.onload = function() { window.print(); };
+                    <` + `/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        // --- INICIALIZACIÓN COMPLETA --- //
+        window.onload = function() {
+            renderProducts();
+            updateCartUI();
+            updateShippingUI();
+            const wCount = document.getElementById('wishlist-count');
+            if (wCount) {
+                wCount.textContent = wishlist.length;
+                wCount.classList.toggle('hidden', wishlist.length === 0);
+            }
+        };
+    </script>
+</body>
+</html>
